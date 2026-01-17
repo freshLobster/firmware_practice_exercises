@@ -1,9 +1,6 @@
 # Exercise 1 — Blinking an LED with no MCU and no LED
-:----:
-## The LOOOOONG way
-:----:
-### (Bare-Metal STM32F4 firmware from scratch with no helpers)
-:----:
+ The LOOOOONG way
+(Bare-Metal STM32F4 firmware from scratch with no helpers)
 
 This repository contains a learn-by-building firmware exercise: bring up a minimal bare-metal project for an STM32F4-class microcontroller.
 This exercise was designed to be done at a professional level with no hobbyist tools (Arduino IDE, PlatformIO, etc.)
@@ -15,17 +12,17 @@ My hope is that others may benefit from these exercises as well.
 
 If you notice any mistakes or have questions please feel free to email me: aidanseine@gmail.com
 
-###For this project I used:
+### For this project I used:
 
--VS Code with the following extensions:
---C/C++ Extension Pack
---Arm Assembly Support
---CMake Tools
---Python
---STM32Cube CMake Support
---STMCube Core
+- VS Code with the following extensions:
+- - C/C++ Extension Pack
+- - Arm Assembly Support
+- - CMake Tools
+- - Python
+- - STM32Cube CMake Support
+- - STMCube Core
 
--Renode
+- Renode
 
 
 Target device: STM32F407 (Cortex-M4F)  
@@ -43,6 +40,7 @@ This is for people who want to learn professional-level firmware bringup by doin
 - verifying memory placement and runtime behavior with real tools
 
 There are no training wheels. You are expected to read datasheets and reason about what the MCU is doing.
+
 **If you get stuck, refer to the already completed exercise_1 directory included in this repository.**
 
 ## Repository layout
