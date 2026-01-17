@@ -1,0 +1,5 @@
+# ninja log v7
+16	62	7901453510097916	CMakeFiles/firmware.elf.dir/src/startup_stm32f407xx.s.obj	ce492bcd50145708
+23	100	7901453510177963	CMakeFiles/firmware.elf.dir/src/main.c.obj	70fdf303c0a146d
+20	115	7901453510137934	CMakeFiles/firmware.elf.dir/src/system_stm32f4xx.c.obj	7d21486ad46840b2
+116	213	7901453511103515	firmware.elf	185dac7c1154f369

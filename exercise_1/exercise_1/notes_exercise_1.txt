@@ -1,0 +1,200 @@
+# Exercise 1 Lab – STM32F4 Bare-Metal Blink (Step-by-Step)
+
+## What you will achieve
+- Bring up an STM32F4 (Cortex-M4F) bare-metal firmware that blinks PD12 using a non-blocking SysTick tick source.
+- Understand linker vs startup roles, minimal register headers, and atomic GPIO writes.
+- Build with CMake/Ninja and run/observe in Renode (CLI or GUI). Optional QEMU smoke test.
+
+## Prerequisites
+- Tools: arm-none-eabi-gcc (14.x), CMake ≥ 3.24, Ninja, Renode (GUI/XWT preferred; CLI works with logging). Optional: QEMU.
+- Helpful: `arm-none-eabi-objdump` for section inspection.
+
+## Project layout (exercise_1/)
+- `cmake/arm-none-eabi.cmake`  – toolchain (cross-compilers, Generic system)
+- `boards/stm32f4disco/linker.ld` – linker script (FLASH/RAM)
+- `include/stm32f4xx_min.h`  – minimal MCU registers (RCC, GPIO, SCB, SysTick)
+- `src/startup_stm32f407xx.s` – vector table, Reset_Handler, weak handlers
+- `src/system_stm32f4xx.c` – SystemInit, SystemCoreClockUpdate
+- `src/main.c` – SysTick tick, GPIO init, blink loop
+- `scripts/run-stm32f4.resc` – Renode script
+
+## 1) Toolchain file (`cmake/arm-none-eabi.cmake`)
+```cmake
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+find_program(ARM_GCC arm-none-eabi-gcc REQUIRED)
+find_program(ARM_GPP arm-none-eabi-g++ REQUIRED)
+find_program(ARM_GAS arm-none-eabi-gcc REQUIRED)
+set(CMAKE_C_COMPILER ${ARM_GCC})
+set(CMAKE_CXX_COMPILER ${ARM_GPP})
+set(CMAKE_ASM_COMPILER ${ARM_GAS})
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+```
+
+## 2) CMakeLists (top-level essentials)
+- Place the toolchain line before `project`:
+```cmake
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/arm-none-eabi.cmake" CACHE FILEPATH "" FORCE)
+project(stm32f4_freertos C ASM)
+```
+- MCU flags as a list (no quotes):
+```cmake
+set(MCU_FLAGS -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard)
+```
+- Target definition:
+```cmake
+add_executable(firmware.elf
+  src/startup_stm32f407xx.s
+  src/system_stm32f4xx.c
+  src/main.c)
+
+target_include_directories(firmware.elf PRIVATE include boards/${BOARD})
+
+target_compile_options(firmware.elf PRIVATE
+  ${MCU_FLAGS} -ffunction-sections -fdata-sections -Wall -Wextra [-Werror])
+
+target_link_options(firmware.elf PRIVATE
+  ${MCU_FLAGS}
+  -Wl,--gc-sections
+  -Wl,-Map=${CMAKE_BINARY_DIR}/firmware.map
+  -T${CMAKE_SOURCE_DIR}/boards/${BOARD}/linker.ld)
+```
+- Build commands:
+```bash
+cmake -S exercise_1 -B exercise_1/build -G Ninja -DCMAKE_TOOLCHAIN_FILE=exercise_1/cmake/arm-none-eabi.cmake
+cmake --build exercise_1/build
+```
+
+## 3) Minimal header (`include/stm32f4xx_min.h`)
+- Bootstrap: `#pragma once`, `#include <stdint.h>`.
+- RCC:
+  - `RCC_TypeDef` fields through AHB1ENR; base `RCC_BASE=0x40023800`.
+  - `#define RCC_AHB1ENR_GPIODEN (1U << 3)`.
+- GPIO:
+  - `GPIO_TypeDef` fields: MODER (2 bits/pin), OTYPER (1), OSPEEDR (2), PUPDR (2), IDR/ODR (1), BSRR (lower16=set, upper16=reset), LCKR, AFR[2].
+  - Base `GPIOD_BASE=0x40020C00`; pointer `#define GPIOD ((GPIO_TypeDef *)GPIOD_BASE)`.
+- SCB/SysTick (Cortex-M4):
+  - SCB: CPUID, ICSR, VTOR, AIRCR, SCR, CCR, SHP[12], SHCSR.
+  - SysTick: CTRL, LOAD, VAL, CALIB; bits ENABLE/TICKINT/CLKSOURCE.
+  - Base `SCS_BASE=0xE000E000`; pointers `SCB`, `SysTick`.
+- Portability: M0/M0+ lack VTOR/fewer priorities; M33/M23 add security fields—match target core.
+
+## 4) Linker script (`boards/stm32f4disco/linker.ld`)
+- MEMORY:
+```ld
+FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 1024K
+RAM   (xrw): ORIGIN = 0x20000000, LENGTH = 128K
+_estack = ORIGIN(RAM) + LENGTH(RAM);
+```
+- Sections:
+  - `.isr_vector` in FLASH, KEEP.
+  - `.text` in FLASH (code/rodata + extab/exidx).
+  - Place .data LMA in FLASH:
+    ```ld
+    . = ALIGN(4);
+    _sidata = .;
+    .data : AT(_sidata) { _sdata = .; *(.data*) _edata = .; } >RAM
+    ```
+  - `.bss (NOLOAD)` in RAM: `_sbss/_ebss`.
+  - `.heap` NOLOAD: `__HeapBase/__HeapLimit` (e.g., +0x8000).
+  - `.stack` NOLOAD: `__StackLimit` to end of RAM; `__StackTop`.
+  - `/DISCARD/` for .comment.
+- Gotcha: `_sidata` must be in FLASH (not 0) to avoid load at 0x0.
+
+## 5) Startup (`src/startup_stm32f407xx.s`)
+- Preamble: `.syntax unified`, `.cpu cortex-m4`, `.fpu fpv4-sp-d16`, `.thumb`, `.global Reset_Handler`.
+- Vector table (32-bit entries):
+  - 0 `_estack` (SP), 1 `Reset_Handler`, 2 NMI, 3 HardFault, 4 MemManage, 5 BusFault, 6 UsageFault, 7–10 reserved, 11 SVC, 12 DebugMon, 13 reserved, 14 PendSV, 15 SysTick.
+- Weak handlers -> Default_Handler (loops). Reset strong.
+- Reset_Handler steps:
+  1) Set SP from `_estack`.
+  2) `bl SystemInit`.
+  3) Copy .data from `_sidata` to `_sdata.._edata`.
+  4) Zero .bss `_sbss.._ebss`.
+  5) `bl main`; loop if returns.
+
+## 6) SystemInit/SystemCoreClock (`src/system_stm32f4xx.c`)
+- `SystemCoreClock = 16_000_000` (HSI).
+- `SystemInit`: enable FPU (CPACR bits 20–23 = 0b1111), keep HSI.
+- `SystemCoreClockUpdate`: keep in sync (16 MHz).
+
+## 7) Application (`src/main.c`)
+- State: `volatile uint32_t sys_tick`; `led_state` flag.
+- ISR: `SysTick_Handler` increments `sys_tick`.
+- GPIO init (PD12 example):
+  ```c
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+  GPIOD->MODER &= ~(0x3U << (12*2)); GPIOD->MODER |= (0x1U << (12*2));
+  GPIOD->OTYPER &= ~(1U << 12);
+  GPIOD->OSPEEDR &= ~(0x3U << (12*2)); GPIOD->OSPEEDR |= (0x2U << (12*2));
+  GPIOD->PUPDR &= ~(0x3U << (12*2));
+  ```
+- SysTick init:
+  ```c
+  SCB->SHP[11] = 0xF0; // low priority
+  SysTick->LOAD = (SystemCoreClock/1000U) - 1U;
+  SysTick->VAL  = 0;
+  SysTick->CTRL = SYSTICK_CTRL_ENABLE | SYSTICK_CTRL_TICKINT | SYSTICK_CTRL_CLKSOURCE;
+  ```
+- Atomic GPIO helpers:
+  ```c
+  GPIOD->BSRR = (1U << pin);       // set
+  GPIOD->BSRR = (1U << (pin+16));  // reset
+  ```
+- Main loop (wrap-safe timing):
+  ```c
+  const uint32_t period = 500;
+  uint32_t next_toggle = sys_tick + period;
+  for (;;) {
+    if ((int32_t)(sys_tick - next_toggle) >= 0) {
+      led_state ? gpio_clear_pin(LED_PIN) : gpio_set_pin(LED_PIN);
+      next_toggle += period;
+    }
+  }
+  ```
+
+## 8) Build and inspect
+- Configure/build (see above).
+- Inspect sections:
+  ```bash
+  arm-none-eabi-objdump -h exercise_1/build/firmware.elf
+  ```
+  Expect `.isr_vector` at 0x08000000, `.data` LMA in FLASH (not 0).
+
+## 9) Run in Renode
+- Script (CLI-safe):
+  ```resc
+  using sysbus
+  mach create "stm32f4"
+  machine LoadPlatformDescription @platforms/boards/stm32f4_discovery.repl
+  sysbus LoadELF @<absolute path>/firmware.elf
+  start
+  ```
+- In monitor (CLI):
+  - Log GPIO: `sysbus LogPeripheralAccess gpioPortD`
+  - Read MMIO: `sysbus ReadDoubleWord 0x40020C14` (ODR), etc.
+- GUI/XWT build: add `showAnalyzer sysbus.gpioPortD` / `sysbus.cpu`.
+
+## 10) Optional QEMU smoke test
+- Limited STM32F4 support; try:
+  ```bash
+  qemu-system-arm -M netduinoplus2 -kernel exercise_1/build/firmware.elf -nographic -serial null -d unimp,guest_errors
+  ```
+- Use Renode for accurate peripheral visibility.
+
+## Validation checklist
+- Build succeeds; no “entry symbol” warnings (Reset_Handler exported).
+- Objdump: `.isr_vector` at 0x08000000; `.data` LMA in FLASH.
+- Renode log: BSRR writes `0x1000` (set PD12) and `0x10000000` (reset PD12) at offset 0x18.
+- SysTick increments; LED toggles on schedule (wrap-safe).
+
+## Key concepts reinforced
+- LMA vs VMA; startup copy/zero of .data/.bss.
+- Vector table layout; weak handlers; exporting Reset_Handler.
+- SysTick configuration and wrap-safe timing.
+- Atomic GPIO set/reset via BSRR (avoid ODR RMW).
+- Cross-compiling with a CMake toolchain for bare-metal targets.

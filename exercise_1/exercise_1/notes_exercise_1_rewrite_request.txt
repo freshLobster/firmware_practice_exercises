@@ -1,0 +1,23 @@
+Task: Rewrite the lab guide at exercise_1/notes_exercise_1.txt into a clearer, well-formatted instructional document for a competent C developer new to firmware. Make it visually readable (headings, bullets, code blocks), concise but thorough, and remove garbling.
+
+Required content (don’t omit):
+- Overview: objective (STM32F4 bare-metal, SysTick-driven PD12 blink, minimal BSP), audience, outputs.
+- Prerequisites: tools (arm-none-eabi-gcc, CMake/Ninja, Renode; optional QEMU, objdump).
+- Project layout: list key files and roles.
+- Step-by-step build instructions:
+  - Toolchain file essentials (cross-compilers, Generic system, find modes).
+  - CMakeLists essentials: toolchain set before project, MCU_FLAGS list (cortex-m4, thumb, fpv4-sp-d16, hard float), target setup (sources, includes), compile/link flags, build commands.
+  - Header: RCC/GPIO/SCB/SysTick structs, bases, key macros; portability note for SCB.
+  - Linker: MEMORY (FLASH 1MB, RAM 128KB), vector in FLASH, .text in FLASH, .data with LMA in FLASH (align, _sidata = .; .data AT(_sidata)), .bss, heap/stack, discard, note about avoiding .data LMA=0.
+  - Startup: vector entries 0–15, weak handlers, export Reset_Handler, Reset flow (set SP, SystemInit, copy .data, zero .bss, call main, loop).
+  - SystemInit/SystemCoreClock: FPU enable (CPACR bits 20–23), keep HSI 16 MHz, SystemCoreClockUpdate.
+  - main.c: SysTick handler increments sys_tick, GPIO init for PD12 (MODER=01, OTYPER=0, OSPEEDR=10, PUPDR=00), SysTick init (priority via SHP[11], 1kHz load), atomic GPIO set/reset via BSRR, wrap-safe loop using (int32_t)(sys_tick - next_toggle) >= 0.
+  - Build/inspect: cmake configure/build, objdump -h expectations (.isr_vector at 0x08000000, .data LMA in FLASH).
+  - Renode run: sample .resc (load STM32F4 Discovery platform, load ELF via absolute path, start), headless logging (LogPeripheralAccess gpioPortD, MMIO reads), note GUI analyzers need XWT.
+  - QEMU note: limited STM32F4 support (netduinoplus2), use -d unimp,guest_errors, prefer Renode.
+- Validation checklist: build OK, entry symbol OK, sections placed correctly, Renode log shows PD12 set/reset via BSRR, SysTick running/blink on schedule.
+- Key concepts: LMA vs VMA, vector/weak handlers, SysTick config and wrap-safe timing, atomic GPIO via BSRR, cross-compiling with CMake toolchain.
+
+Notes:
+- Preserve all technical detail; improve readability and structure.
+- Use code fences for code/commands; use bullets and headings.

@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "windows": {
+        "options": {
+            "shell": {
+                "executable": "cmd.exe",
+                "args": [
+                    "/d",
+                    "/c"
+                ]
+            }
+        }
+    },
+    "tasks": [
+        {
+            "label": "Compile",
+            "type": "shell",
+            "command": "your_compile_command_here",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Splat",
+            "type": "process",
+            "command": "${command:splat.debugSplatCommand}",
+            "args": [
+                "${workspaceRoot}"
+            ],
+            "problemMatcher": [],
+            "dependsOn": [
+                "Compile"
+            ],
+            "options": {
+                "localHostPort": "7999",
+                "internalPort": "8999",
+                "boardName": "",
+                "boardVisuPath": "${config:ac6-splat.splatInstallDir}\\templates",
+                "renodePath": "${config:ac6-splat.splatInstallDir}\\renode\\bin\\Renode.exe"
+            },
+            "group": {
+                "isDefault": true
+            }
+        }
+    ]
+}

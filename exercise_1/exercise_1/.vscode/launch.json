@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Splat",
+            "cwd": "${workspaceFolder}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "external",
+            "gdbTarget": "localhost:3332",
+            "gdbPath": "",
+            "executable": "${config:ac6-splat.splatProjectPath}\\build\\firmware.elf",
+            "preLaunchTask": "Run Splat",
+            "runToEntryPoint": "main"
+        }
+    ]
+}

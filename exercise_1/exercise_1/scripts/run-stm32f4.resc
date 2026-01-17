@@ -1,0 +1,9 @@
+using sysbus
+mach create "stm32f4"
+machine LoadPlatformDescription @platforms/boards/stm32f4_discovery.repl
+# Use absolute path to the built ELF to avoid path issues.
+sysbus LoadELF @f:/Documents/FirmwareProjects/practice/exercise_1/build/firmware.elf
+sysbus.cpu LogFunctionNames true "gpio_set_pin gpio_clear_pin"
+sysbus LogPeripheralAccess sysbus.gpioPortD
+watch "sysbus ReadDoubleWord 0x40020C14" 500
+start

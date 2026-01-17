@@ -1,0 +1,20 @@
+[
+{
+  "directory": "F:/Documents/FirmwareProjects/practice/exercise_1/build",
+  "command": "C:\\PROGRA~2\\ARMGNU~1\\14EFD8~1.2RE\\bin\\AR19DD~1.EXE -IF:/Documents/FirmwareProjects/practice/exercise_1/include -IF:/Documents/FirmwareProjects/practice/exercise_1/boards/stm32f4disco -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -Wall -Wextra -Werror -ffunction-sections -fdata-sections -o CMakeFiles\\firmware.elf.dir\\src\\startup_stm32f407xx.s.obj -c F:\\Documents\\FirmwareProjects\\practice\\exercise_1\\src\\startup_stm32f407xx.s",
+  "file": "F:/Documents/FirmwareProjects/practice/exercise_1/src/startup_stm32f407xx.s",
+  "output": "F:/Documents/FirmwareProjects/practice/exercise_1/build/CMakeFiles/firmware.elf.dir/src/startup_stm32f407xx.s.obj"
+},
+{
+  "directory": "F:/Documents/FirmwareProjects/practice/exercise_1/build",
+  "command": "C:\\PROGRA~2\\ARMGNU~1\\14EFD8~1.2RE\\bin\\AR19DD~1.EXE -IF:/Documents/FirmwareProjects/practice/exercise_1/include -IF:/Documents/FirmwareProjects/practice/exercise_1/boards/stm32f4disco -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -Wall -Wextra -Werror -ffunction-sections -fdata-sections -o CMakeFiles\\firmware.elf.dir\\src\\system_stm32f4xx.c.obj -c F:\\Documents\\FirmwareProjects\\practice\\exercise_1\\src\\system_stm32f4xx.c",
+  "file": "F:/Documents/FirmwareProjects/practice/exercise_1/src/system_stm32f4xx.c",
+  "output": "F:/Documents/FirmwareProjects/practice/exercise_1/build/CMakeFiles/firmware.elf.dir/src/system_stm32f4xx.c.obj"
+},
+{
+  "directory": "F:/Documents/FirmwareProjects/practice/exercise_1/build",
+  "command": "C:\\PROGRA~2\\ARMGNU~1\\14EFD8~1.2RE\\bin\\AR19DD~1.EXE -IF:/Documents/FirmwareProjects/practice/exercise_1/include -IF:/Documents/FirmwareProjects/practice/exercise_1/boards/stm32f4disco -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -Wall -Wextra -Werror -ffunction-sections -fdata-sections -o CMakeFiles\\firmware.elf.dir\\src\\main.c.obj -c F:\\Documents\\FirmwareProjects\\practice\\exercise_1\\src\\main.c",
+  "file": "F:/Documents/FirmwareProjects/practice/exercise_1/src/main.c",
+  "output": "F:/Documents/FirmwareProjects/practice/exercise_1/build/CMakeFiles/firmware.elf.dir/src/main.c.obj"
+}
+]
