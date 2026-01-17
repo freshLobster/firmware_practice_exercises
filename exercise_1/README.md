@@ -251,9 +251,9 @@ You must define the symbols used by your startup code, typically including:
 
 ## Part 4 — Startup code (vector table and Reset_Handler)
 
-A linker script is one of the big things that separates firmware from application programming. On your computer, you can pretend memory is infinite and flat. In firmware, memory is physical, limited, and split across different technologies. FLASH is non-volatile storage: it holds your code and constant data and survives power loss. RAM is volatile working memory: stack, heap, and variables. They are not interchangeable, and they are not at the same addresses.
+In normal software, the OS loads your program, sets up memory, initializes the runtime, sets up the stack, and finally calls your `main()`. In bare-metal firmware, none of that exists. When the MCU powers on, it reads the initial stack pointer and reset vector from the first two words of flash, then jumps directly into your reset handler. If your reset handler is wrong, your code never even reaches `main()`.
 
-The linker script describes the target’s memory layout and tells the linker where each section should live. This isn’t just about organization — it is required for boot. The CPU starts executing at a known address in flash. Your vector table must be at the beginning of flash. Your `.text` (code) must be in flash. Your `.data` is tricky: it must run in RAM (fast and writable), but it must be stored in flash (non-volatile). That’s why `.data` has both an LMA (load memory address) and VMA (virtual memory address). If you don’t understand that early, embedded will feel like black magic.
+Startup code is the firmware equivalent of “the OS bootstrapping you into existence.” It sets up the minimum environment so that C code can run correctly. That includes copying `.data` into RAM (because variables with initial values must exist in writable memory) and clearing `.bss` (because uninitialized globals must start as zero). If these steps are missing or wrong, your C program will behave unpredictably even if it compiles perfectly.
 
 
 File: `exercise_1/src/startup_stm32f407xx.s`
