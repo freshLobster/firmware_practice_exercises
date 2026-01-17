@@ -1,10 +1,16 @@
-# Exercise 1 — Blinking an LED with no MCU and no LED
- The LOOOOONG way
-(Bare-Metal STM32F4 firmware from scratch with no helpers)
+# <center> Exercise 1 </center>
+## <center> Using an MCU to blink an LED with no MCU, and no LED </center> 
+
+
+
+--- 
 
 This repository contains a learn-by-building firmware exercise: bring up a minimal bare-metal project for an STM32F4-class microcontroller.
 This exercise was designed to be done at a professional level with no hobbyist tools (Arduino IDE, PlatformIO, etc.)
-==There is no need to own or posess the target hardware.== Anyone can complete this exercise with only a text editor, the gcc compiler, and Renode. 
+
+__There is no need to own or posess the target hardware.__
+
+Anyone can complete this exercise with only a text editor, the gcc compiler, and Renode. 
 Since in a professional environment you may or may not have access to the target hardware, we will simulate it with Renode and confirm behavior by reading registers and tracking function calls.
 This is the first of multiple exercises that progressively get more challenging.
 I created these to practice and maintain my own embedded skills during a period in which I am not currently employed. Through building out lessons and explaining the topics I really get a better and deeper understanding of it myself.
@@ -14,32 +20,35 @@ If you notice any mistakes or have questions please feel free to email me: aidan
 
 ### For this project I used:
 
-- VS Code with the following extensions:
-- - C/C++ Extension Pack
-- - Arm Assembly Support
-- - CMake Tools
-- - Python
-- - STM32Cube CMake Support
-- - STMCube Core
-
 - Renode
+- VS Code 
+
+    with the following extensions:
+  - C/C++ Extension Pack
+  - Arm Assembly Support
+  - CMake Tools
+  - Python
+  - STM32Cube CMake Support
+  - STMCube Core
+
+But feel free to use whatever you prefer.
 
 
-Target device: STM32F407 (Cortex-M4F)  
-Primary validation environment: Renode
+>Target device: STM32F407 (Cortex-M4F)  
+>Primary validation environment: Renode
 
 The goal is to end with a `firmware.elf` that toggles GPIO PD12 at a steady interval using a SysTick-driven tick counter and a wrap-safe scheduler.
 
 ## Who this is for
 
-This is for people who want to learn professional-level firmware bringup by doing the real work:
+This is for those who want to learn firmware bringup by:
 - building a cross-compiled toolchain pipeline
 - writing a linker script
 - implementing startup/reset code
 - defining minimal register maps
 - verifying memory placement and runtime behavior with real tools
 
-There are no training wheels. You are expected to read datasheets and reason about what the MCU is doing.
+It can be done by anyone with enough patience and a willingness to learn, and I am sure you will gain a better understanding of computer architecture and embedded systems in the process.
 
 **If you get stuck, refer to the already completed exercise_1 directory included in this repository.**
 
