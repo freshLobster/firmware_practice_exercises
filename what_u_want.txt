@@ -1,0 +1,13 @@
+contents of register at 0x18 BSRR:
+
+32 bit word
+upper 16 bits -> reset (clears that gpio)
+lower 16 bits -> set (sets that gpio)
+
+       |     upper      |   lower        |
+set = 0b0000000000000000 0000100000000000
+                             ^position 12
+
+
+clear(reset) = 0b0000100000000000 0000000000000000
+                     ^position (12 + 16)
